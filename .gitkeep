@@ -1,0 +1,5 @@
+# TechFill API - NestJS Backend
+
+This directory will contain the NestJS backend API.
+
+See setup instructions in: ../techfill-web/docs/BACKEND-SETUP.md
