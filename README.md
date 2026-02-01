@@ -1,149 +1,85 @@
-# TechFill API - NestJS Backend
+<p align="center">
+  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+</p>
 
-Backend API for TechFill - Intent-based tech talent matching platform.
+[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
+[circleci-url]: https://circleci.com/gh/nestjs/nest
 
-## Quick Setup
+  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
+    <p align="center">
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
+<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
+<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
+<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
+<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
+<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
+  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
+    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
+  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+</p>
+  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
+  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-### 1. Initialize NestJS Project
+## Description
 
-```bash
-cd /Users/petemihaylov/Desktop/git/techfill-api
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-# Install NestJS CLI globally (if not already installed)
-npm install -g @nestjs/cli
-
-# Create new NestJS app in current directory
-npx @nestjs/cli new . --package-manager npm --skip-git
-
-# Install dependencies
-npm install @nestjs/jwt @nestjs/passport passport passport-jwt
-npm install @supabase/supabase-js
-npm install class-validator class-transformer
-npm install @nestjs/config
-
-# Install dev dependencies
-npm install -D @types/passport-jwt
-```
-
-### 2. Environment Variables
-
-Create `.env` file:
-
-```bash
-# Server
-PORT=3001
-NODE_ENV=development
-
-# Supabase
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-SUPABASE_JWT_SECRET=your-jwt-secret
-
-# JWT
-JWT_SECRET=your-jwt-secret-change-this
-JWT_EXPIRES_IN=1h
-
-# CORS
-CORS_ORIGIN=http://localhost:3000
-```
-
-### 3. Run Development Server
+## Project setup
 
 ```bash
-npm run start:dev
+$ npm install
 ```
 
-API will be available at: http://localhost:3001
+## Compile and run the project
 
-## Full Documentation
+```bash
+# development
+$ npm run start
 
-For complete setup instructions, see:
-- [Backend Setup Guide](../techfill-web/docs/BACKEND-SETUP.md)
-- [Architecture Overview](../techfill-web/docs/ARCHITECTURE.md)
-- [Split Repository Plan](../techfill-web/docs/SPLIT-REPO-PLAN.md)
+# watch mode
+$ npm run start:dev
 
-## Project Structure (After Setup)
-
-```
-techfill-api/
-├── src/
-│   ├── auth/                   # Authentication module
-│   ├── users/                  # User management
-│   ├── candidates/             # Candidate profiles
-│   ├── companies/              # Company profiles
-│   ├── jobs/                   # Job listings
-│   ├── applications/           # Application flow
-│   ├── storage/                # File storage (CVs, logos)
-│   ├── admin/                  # Admin endpoints
-│   ├── common/                 # Shared utilities
-│   ├── database/               # Supabase client
-│   ├── app.module.ts
-│   └── main.ts
-├── supabase/
-│   └── migrations/             # Database migrations
-├── test/
-├── .env
-├── .env.example
-└── package.json
+# production mode
+$ npm run start:prod
 ```
 
-## API Endpoints (MVP)
+## Run tests
 
-### Auth
-- `POST /api/auth/signup/candidate` - Candidate signup
-- `POST /api/auth/signup/company` - Company signup
-- `POST /api/auth/login` - Login
-- `POST /api/auth/logout` - Logout
-- `GET /api/auth/me` - Get current user
+```bash
+# unit tests
+$ npm run test
 
-### Jobs (Public)
-- `GET /api/jobs` - List all active jobs
-- `GET /api/jobs/:id` - Get job details
+# e2e tests
+$ npm run test:e2e
 
-### Jobs (Protected - Company)
-- `POST /api/jobs` - Create job
-- `PUT /api/jobs/:id` - Update job
-- `PATCH /api/jobs/:id/status` - Change job status
-- `DELETE /api/jobs/:id` - Delete job
+# test coverage
+$ npm run test:cov
+```
 
-### Applications (Protected - Candidate)
-- `POST /api/jobs/:id/apply` - Apply to job
-- `GET /api/applications` - Get own applications
-- `DELETE /api/applications/:id` - Withdraw application
+## Resources
 
-### Applications (Protected - Company)
-- `GET /api/jobs/:id/applications` - Get job applicants
-- `PATCH /api/applications/:id/status` - Update application status
+Check out a few resources that may come in handy when working with NestJS:
 
-### Candidates (Protected)
-- `GET /api/candidates/profile` - Get own profile
-- `PUT /api/candidates/profile` - Update profile
-- `PATCH /api/candidates/visibility` - Toggle visibility
-- `POST /api/candidates/cv` - Upload CV
+- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
+- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
+- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
+- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
+- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
+- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
+- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
 
-### Companies (Protected)
-- `GET /api/companies/profile` - Get own profile
-- `PUT /api/companies/profile` - Update profile
+## Support
 
-### Admin (Protected - Admin only)
-- `GET /api/admin/users` - List users
-- `GET /api/admin/companies` - List companies
-- `PATCH /api/admin/companies/:id/approve` - Approve company
-- `DELETE /api/admin/jobs/:id` - Delete job
+Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
-## Related Repositories
+## Stay in touch
 
-- **Frontend**: `../techfill-web` (Next.js)
-- **Documentation**: `../techfill-web/docs/`
-
-## Next Steps
-
-1. Follow the [Backend Setup Guide](../techfill-web/docs/BACKEND-SETUP.md)
-2. Set up Supabase project
-3. Run database migrations
-4. Implement modules one by one
-5. Test with frontend
+- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
+- Website - [https://nestjs.com](https://nestjs.com/)
+- Twitter - [@nestframework](https://twitter.com/nestframework)
 
 ## License
 
-Proprietary - All rights reserved
+Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
