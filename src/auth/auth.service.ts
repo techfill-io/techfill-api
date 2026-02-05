@@ -22,22 +22,24 @@ export class AuthService {
   ) {}
 
   async signupCandidate(dto: SignupCandidateDto) {
-    const { data: authUser, error: authError } = await this.supabaseService
-      .getClient()
-      .auth.admin.createUser({
+    const { data: signUpData, error: signUpError } = await this.supabaseService
+      .getPublicClient()
+      .auth.signUp({
         email: dto.email,
         password: dto.password,
-        email_confirm: false,
       })
 
-    if (authError) {
-      if (authError.message?.includes('already registered')) {
+    if (signUpError) {
+      if (signUpError.message?.includes('already registered')) {
         throw new ConflictException('An account with this email already exists')
       }
-      throw new BadRequestException(authError.message)
+      throw new BadRequestException(signUpError.message)
     }
 
-    const userId = authUser.user.id
+    const userId = signUpData.user?.id
+    if (!userId) {
+      throw new BadRequestException('Failed to create user')
+    }
 
     const { error: profileError } = await this.supabaseService.from('profiles').insert({
       user_id: userId,
@@ -47,7 +49,7 @@ export class AuthService {
     })
 
     if (profileError) {
-      await this.supabaseService.getClient().auth.admin.deleteUser(userId)
+      await this.supabaseService.getAdminClient().auth.admin.deleteUser(userId)
       throw new BadRequestException('Failed to create profile')
     }
 
@@ -58,7 +60,7 @@ export class AuthService {
     })
 
     if (candidateError) {
-      await this.supabaseService.getClient().auth.admin.deleteUser(userId)
+      await this.supabaseService.getAdminClient().auth.admin.deleteUser(userId)
       throw new BadRequestException('Failed to create candidate profile')
     }
 
@@ -73,22 +75,24 @@ export class AuthService {
   }
 
   async signupCompany(dto: SignupCompanyDto) {
-    const { data: authUser, error: authError } = await this.supabaseService
-      .getClient()
-      .auth.admin.createUser({
+    const { data: signUpData2, error: signUpError2 } = await this.supabaseService
+      .getPublicClient()
+      .auth.signUp({
         email: dto.email,
         password: dto.password,
-        email_confirm: false,
       })
 
-    if (authError) {
-      if (authError.message?.includes('already registered')) {
+    if (signUpError2) {
+      if (signUpError2.message?.includes('already registered')) {
         throw new ConflictException('An account with this email already exists')
       }
-      throw new BadRequestException(authError.message)
+      throw new BadRequestException(signUpError2.message)
     }
 
-    const userId = authUser.user.id
+    const userId = signUpData2.user?.id
+    if (!userId) {
+      throw new BadRequestException('Failed to create user')
+    }
 
     const { error: profileError } = await this.supabaseService.from('profiles').insert({
       user_id: userId,
@@ -98,7 +102,7 @@ export class AuthService {
     })
 
     if (profileError) {
-      await this.supabaseService.getClient().auth.admin.deleteUser(userId)
+      await this.supabaseService.getAdminClient().auth.admin.deleteUser(userId)
       throw new BadRequestException('Failed to create profile')
     }
 
@@ -108,7 +112,7 @@ export class AuthService {
     })
 
     if (companyError) {
-      await this.supabaseService.getClient().auth.admin.deleteUser(userId)
+      await this.supabaseService.getAdminClient().auth.admin.deleteUser(userId)
       throw new BadRequestException('Failed to create company')
     }
 
@@ -123,7 +127,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const { data, error } = await this.supabaseService.getClient().auth.signInWithPassword({
+    const { data, error } = await this.supabaseService.getPublicClient().auth.signInWithPassword({
       email: dto.email,
       password: dto.password,
     })
@@ -203,7 +207,9 @@ export class AuthService {
   }
 
   async forgotPassword(dto: ForgotPasswordDto) {
-    const { data: usersResponse } = await this.supabaseService.getClient().auth.admin.listUsers()
+    const { data: usersResponse } = await this.supabaseService
+      .getAdminClient()
+      .auth.admin.listUsers()
 
     const matchedUsers =
       (usersResponse as unknown as { users: Array<{ id: string; email?: string }> })?.users ?? []
@@ -224,7 +230,7 @@ export class AuthService {
         const redirectTo = this.configService.get<string>('CORS_ORIGIN', 'http://localhost:3000')
         const primaryOrigin = redirectTo.split(',')[0].trim()
 
-        await this.supabaseService.getClient().auth.resetPasswordForEmail(dto.email, {
+        await this.supabaseService.getPublicClient().auth.resetPasswordForEmail(dto.email, {
           redirectTo: `${primaryOrigin}/reset-password`,
         })
       }
@@ -237,7 +243,7 @@ export class AuthService {
 
   async resetPassword(dto: ResetPasswordDto) {
     const { data: sessionData, error: sessionError } = await this.supabaseService
-      .getClient()
+      .getPublicClient()
       .auth.setSession({
         access_token: dto.access_token,
         refresh_token: '',
@@ -248,7 +254,7 @@ export class AuthService {
     }
 
     const { error: updateError } = await this.supabaseService
-      .getClient()
+      .getAdminClient()
       .auth.admin.updateUserById(sessionData.user.id, {
         password: dto.password,
       })
@@ -307,7 +313,7 @@ export class AuthService {
 
   async setPassword(userId: string, dto: SetPasswordDto) {
     const { error } = await this.supabaseService
-      .getClient()
+      .getAdminClient()
       .auth.admin.updateUserById(userId, { password: dto.password })
 
     if (error) {
@@ -326,7 +332,7 @@ export class AuthService {
   }
 
   async logout(userId: string) {
-    await this.supabaseService.getClient().auth.signOut()
+    await this.supabaseService.getPublicClient().auth.signOut()
     return { message: 'Logged out successfully' }
   }
 
@@ -361,7 +367,7 @@ export class AuthService {
 
   private async getAuthUser(userId: string) {
     const { data: authUser, error: authError } = await this.supabaseService
-      .getClient()
+      .getAdminClient()
       .auth.admin.getUserById(userId)
     if (authError || !authUser?.user) {
       throw new BadRequestException('User not found in auth system')

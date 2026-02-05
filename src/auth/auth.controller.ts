@@ -1,14 +1,13 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common'
-
 import { AuthService } from './auth.service'
-import { CurrentUser } from './decorators/current-user.decorator'
-import { ForgotPasswordDto } from './dto/forgot-password.dto'
-import { LoginDto } from './dto/login.dto'
-import { ResetPasswordDto } from './dto/reset-password.dto'
-import { SetPasswordDto } from './dto/set-password.dto'
 import { SignupCandidateDto } from './dto/signup-candidate.dto'
 import { SignupCompanyDto } from './dto/signup-company.dto'
+import { LoginDto } from './dto/login.dto'
+import { ForgotPasswordDto } from './dto/forgot-password.dto'
+import { ResetPasswordDto } from './dto/reset-password.dto'
+import { SetPasswordDto } from './dto/set-password.dto'
 import { JwtAuthGuard } from './guards/jwt-auth.guard'
+import { CurrentUser } from './decorators/current-user.decorator'
 import { AuthenticatedUser } from '../common/types'
 
 @Controller('auth')

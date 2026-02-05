@@ -19,5 +19,5 @@ export interface JwtPayload {
 export interface AuthenticatedUser {
   id: string
   email: string
-  role: 'candidate' | 'company' | 'admin'
+  role: 'candidate' | 'company' | 'admin' | null
 }
