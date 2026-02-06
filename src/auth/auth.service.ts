@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 
-import { SupabaseService } from '../database/supabase.service'
+import { supabase, getSupabaseAdmin } from '../common/supabase/supabase'
 import { ForgotPasswordDto } from './dto/forgot-password.dto'
 import { LoginDto } from './dto/login.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
@@ -16,18 +16,13 @@ import { SignupCompanyDto, FREE_EMAIL_DOMAINS } from './dto/signup-company.dto'
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private readonly supabaseService: SupabaseService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly configService: ConfigService) {}
 
   async signupCandidate(dto: SignupCandidateDto) {
-    const { data: signUpData, error: signUpError } = await this.supabaseService
-      .getPublicClient()
-      .auth.signUp({
-        email: dto.email,
-        password: dto.password,
-      })
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: dto.email,
+      password: dto.password,
+    })
 
     if (signUpError) {
       if (signUpError.message?.includes('already registered')) {
@@ -41,7 +36,7 @@ export class AuthService {
       throw new BadRequestException('Failed to create user')
     }
 
-    const { error: profileError } = await this.supabaseService.from('profiles').insert({
+    const { error: profileError } = await getSupabaseAdmin().from('profiles').insert({
       user_id: userId,
       role: 'candidate',
       auth_provider: 'email',
@@ -49,18 +44,18 @@ export class AuthService {
     })
 
     if (profileError) {
-      await this.supabaseService.getAdminClient().auth.admin.deleteUser(userId)
+      await getSupabaseAdmin().auth.admin.deleteUser(userId)
       throw new BadRequestException('Failed to create profile')
     }
 
-    const { error: candidateError } = await this.supabaseService.from('candidate_profiles').insert({
+    const { error: candidateError } = await getSupabaseAdmin().from('candidate_profiles').insert({
       user_id: userId,
       name: dto.name,
       email: dto.email,
     })
 
     if (candidateError) {
-      await this.supabaseService.getAdminClient().auth.admin.deleteUser(userId)
+      await getSupabaseAdmin().auth.admin.deleteUser(userId)
       throw new BadRequestException('Failed to create candidate profile')
     }
 
@@ -75,12 +70,10 @@ export class AuthService {
   }
 
   async signupCompany(dto: SignupCompanyDto) {
-    const { data: signUpData2, error: signUpError2 } = await this.supabaseService
-      .getPublicClient()
-      .auth.signUp({
-        email: dto.email,
-        password: dto.password,
-      })
+    const { data: signUpData2, error: signUpError2 } = await supabase.auth.signUp({
+      email: dto.email,
+      password: dto.password,
+    })
 
     if (signUpError2) {
       if (signUpError2.message?.includes('already registered')) {
@@ -94,7 +87,7 @@ export class AuthService {
       throw new BadRequestException('Failed to create user')
     }
 
-    const { error: profileError } = await this.supabaseService.from('profiles').insert({
+    const { error: profileError } = await getSupabaseAdmin().from('profiles').insert({
       user_id: userId,
       role: 'company',
       auth_provider: 'email',
@@ -102,17 +95,17 @@ export class AuthService {
     })
 
     if (profileError) {
-      await this.supabaseService.getAdminClient().auth.admin.deleteUser(userId)
+      await getSupabaseAdmin().auth.admin.deleteUser(userId)
       throw new BadRequestException('Failed to create profile')
     }
 
-    const { error: companyError } = await this.supabaseService.from('companies').insert({
+    const { error: companyError } = await getSupabaseAdmin().from('companies').insert({
       owner_user_id: userId,
       name: dto.company_name,
     })
 
     if (companyError) {
-      await this.supabaseService.getAdminClient().auth.admin.deleteUser(userId)
+      await getSupabaseAdmin().auth.admin.deleteUser(userId)
       throw new BadRequestException('Failed to create company')
     }
 
@@ -127,7 +120,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const { data, error } = await this.supabaseService.getPublicClient().auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: dto.email,
       password: dto.password,
     })
@@ -142,7 +135,7 @@ export class AuthService {
       throw new UnauthorizedException('Please verify your email address before logging in')
     }
 
-    const { data: profile } = await this.supabaseService
+    const { data: profile } = await getSupabaseAdmin()
       .from('profiles')
       .select('role')
       .eq('user_id', user.id)
@@ -207,16 +200,14 @@ export class AuthService {
   }
 
   async forgotPassword(dto: ForgotPasswordDto) {
-    const { data: usersResponse } = await this.supabaseService
-      .getAdminClient()
-      .auth.admin.listUsers()
+    const { data: usersResponse } = await getSupabaseAdmin().auth.admin.listUsers()
 
     const matchedUsers =
       (usersResponse as unknown as { users: Array<{ id: string; email?: string }> })?.users ?? []
     const user = matchedUsers.find(u => u.email?.toLowerCase() === dto.email.toLowerCase())
 
     if (user) {
-      const { data: profile } = await this.supabaseService
+      const { data: profile } = await getSupabaseAdmin()
         .from('profiles')
         .select('has_password, auth_provider')
         .eq('user_id', user.id)
@@ -230,7 +221,7 @@ export class AuthService {
         const redirectTo = this.configService.get<string>('CORS_ORIGIN', 'http://localhost:3000')
         const primaryOrigin = redirectTo.split(',')[0].trim()
 
-        await this.supabaseService.getPublicClient().auth.resetPasswordForEmail(dto.email, {
+        await supabase.auth.resetPasswordForEmail(dto.email, {
           redirectTo: `${primaryOrigin}/reset-password`,
         })
       }
@@ -242,28 +233,27 @@ export class AuthService {
   }
 
   async resetPassword(dto: ResetPasswordDto) {
-    const { data: sessionData, error: sessionError } = await this.supabaseService
-      .getPublicClient()
-      .auth.setSession({
-        access_token: dto.access_token,
-        refresh_token: '',
-      })
+    const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+      access_token: dto.access_token,
+      refresh_token: '',
+    })
 
     if (sessionError || !sessionData.user) {
       throw new BadRequestException('Invalid or expired reset token')
     }
 
-    const { error: updateError } = await this.supabaseService
-      .getAdminClient()
-      .auth.admin.updateUserById(sessionData.user.id, {
+    const { error: updateError } = await getSupabaseAdmin().auth.admin.updateUserById(
+      sessionData.user.id,
+      {
         password: dto.password,
-      })
+      },
+    )
 
     if (updateError) {
       throw new BadRequestException('Failed to update password')
     }
 
-    await this.supabaseService
+    await getSupabaseAdmin()
       .from('profiles')
       .update({ has_password: true, auth_provider: 'both' })
       .eq('user_id', sessionData.user.id)
@@ -272,7 +262,7 @@ export class AuthService {
   }
 
   async getMe(userId: string) {
-    const { data: profile, error } = await this.supabaseService
+    const { data: profile, error } = await getSupabaseAdmin()
       .from('profiles')
       .select('*')
       .eq('user_id', userId)
@@ -285,14 +275,14 @@ export class AuthService {
     let profileData = null
 
     if (profile.role === 'candidate') {
-      const { data } = await this.supabaseService
+      const { data } = await getSupabaseAdmin()
         .from('candidate_profiles')
         .select('*')
         .eq('user_id', userId)
         .single()
       profileData = data
     } else if (profile.role === 'company') {
-      const { data } = await this.supabaseService
+      const { data } = await getSupabaseAdmin()
         .from('companies')
         .select('*')
         .eq('owner_user_id', userId)
@@ -312,15 +302,15 @@ export class AuthService {
   }
 
   async setPassword(userId: string, dto: SetPasswordDto) {
-    const { error } = await this.supabaseService
-      .getAdminClient()
-      .auth.admin.updateUserById(userId, { password: dto.password })
+    const { error } = await getSupabaseAdmin().auth.admin.updateUserById(userId, {
+      password: dto.password,
+    })
 
     if (error) {
       throw new BadRequestException('Failed to set password')
     }
 
-    await this.supabaseService
+    await getSupabaseAdmin()
       .from('profiles')
       .update({
         has_password: true,
@@ -332,7 +322,7 @@ export class AuthService {
   }
 
   async logout(userId: string) {
-    await this.supabaseService.getPublicClient().auth.signOut()
+    await supabase.auth.signOut()
     return { message: 'Logged out successfully' }
   }
 
@@ -357,7 +347,7 @@ export class AuthService {
   }
 
   private async getExistingProfile(userId: string) {
-    const { data } = await this.supabaseService
+    const { data } = await getSupabaseAdmin()
       .from('profiles')
       .select('*, candidate_profiles(*), companies:companies(*)')
       .eq('user_id', userId)
@@ -366,9 +356,8 @@ export class AuthService {
   }
 
   private async getAuthUser(userId: string) {
-    const { data: authUser, error: authError } = await this.supabaseService
-      .getAdminClient()
-      .auth.admin.getUserById(userId)
+    const { data: authUser, error: authError } =
+      await getSupabaseAdmin().auth.admin.getUserById(userId)
     if (authError || !authUser?.user) {
       throw new BadRequestException('User not found in auth system')
     }
@@ -376,7 +365,7 @@ export class AuthService {
   }
 
   private async createProfileRecord(userId: string, role: 'candidate' | 'company') {
-    const { error: profileError } = await this.supabaseService.from('profiles').insert({
+    const { error: profileError } = await getSupabaseAdmin().from('profiles').insert({
       user_id: userId,
       role,
       auth_provider: 'google',
@@ -394,16 +383,18 @@ export class AuthService {
     email?: string,
   ) {
     if (role === 'candidate') {
-      await this.supabaseService.from('candidate_profiles').insert({
+      await getSupabaseAdmin().from('candidate_profiles').insert({
         user_id: userId,
         name: fullName,
         email,
       })
     } else {
-      await this.supabaseService.from('companies').insert({
-        owner_user_id: userId,
-        name: fullName ? `${fullName}'s Company` : 'My Company',
-      })
+      await getSupabaseAdmin()
+        .from('companies')
+        .insert({
+          owner_user_id: userId,
+          name: fullName ? `${fullName}'s Company` : 'My Company',
+        })
     }
   }
 }

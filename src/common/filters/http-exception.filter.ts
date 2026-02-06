@@ -1,34 +1,47 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common'
-import { Response } from 'express'
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, Logger } from '@nestjs/common'
+import { Request, Response } from 'express'
 
-@Catch()
+@Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
-  catch(exception: unknown, host: ArgumentsHost) {
+  private readonly logger = new Logger(HttpExceptionFilter.name)
+
+  catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
     const response = ctx.getResponse<Response>()
+    const request = ctx.getRequest<Request>()
+    const status = exception.getStatus()
+    const exceptionResponse = exception.getResponse()
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR
-    let message = 'Internal server error'
+    const message = this.extractMessage(exceptionResponse, exception.message)
 
-    if (exception instanceof HttpException) {
-      status = exception.getStatus()
-      const exceptionResponse = exception.getResponse()
-
-      if (typeof exceptionResponse === 'string') {
-        message = exceptionResponse
-      } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
-        const responseObj = exceptionResponse as Record<string, unknown>
-        message = (responseObj.message as string) || exception.message
-
-        if (Array.isArray(responseObj.message)) {
-          message = responseObj.message.join(', ')
-        }
-      }
-    }
+    this.logger.warn(
+      `${request.method} ${request.url} ${status} - ${Array.isArray(message) ? message.join(', ') : message}`,
+    )
 
     response.status(status).json({
       success: false,
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: request.url,
       error: message,
     })
+  }
+
+  private extractMessage(exceptionResponse: string | object, fallback: string): string | string[] {
+    if (typeof exceptionResponse === 'string') {
+      return exceptionResponse
+    }
+
+    const responseObj = exceptionResponse as Record<string, unknown>
+
+    if (Array.isArray(responseObj.message)) {
+      return responseObj.message
+    }
+
+    if (typeof responseObj.message === 'string') {
+      return responseObj.message
+    }
+
+    return fallback
   }
 }

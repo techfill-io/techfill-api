@@ -5,7 +5,7 @@ import { ExtractJwt, Strategy, StrategyOptionsWithoutRequest } from 'passport-jw
 import { passportJwtSecret } from 'jwks-rsa'
 
 import { JwtPayload, AuthenticatedUser } from '../../common/types'
-import { SupabaseService } from '../../database/supabase.service'
+import { getSupabaseAdmin } from '../../common/supabase/supabase'
 
 function buildJwtStrategyOptions(configService: ConfigService): StrategyOptionsWithoutRequest {
   const supabaseUrl = configService.get<string>('SUPABASE_URL')
@@ -54,10 +54,7 @@ function buildJwtStrategyOptions(configService: ConfigService): StrategyOptionsW
 export class JwtStrategy extends PassportStrategy(Strategy) {
   private readonly logger = new Logger(JwtStrategy.name)
 
-  constructor(
-    configService: ConfigService,
-    private readonly supabaseService: SupabaseService,
-  ) {
+  constructor(configService: ConfigService) {
     const options = buildJwtStrategyOptions(configService)
     super(options)
 
@@ -75,7 +72,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     // Try to get the profile, but don't fail if it doesn't exist yet
     // This allows the google/sync endpoint to create the profile
-    const { data: profile, error } = await this.supabaseService
+    const { data: profile, error } = await getSupabaseAdmin()
       .from('profiles')
       .select('role')
       .eq('user_id', payload.sub)
