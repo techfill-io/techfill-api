@@ -71,7 +71,8 @@
   },
   "prepare": "husky install",
   "overrides": {
-    "glob": "^13"
+    "glob": "^13",
+    "ajv": "^8.18.0"
   },
   "lint-staged": {
     "*.ts": [
