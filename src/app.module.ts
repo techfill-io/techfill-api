@@ -4,12 +4,13 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
 
 import { AppService } from './app.service'
 import { AuthModule } from './auth/auth.module'
+import { CandidatesModule } from './candidates/candidates.module'
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { TransformInterceptor } from './common/interceptors/transform.interceptor'
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, CandidatesModule],
   controllers: [],
   providers: [
     AppService,
